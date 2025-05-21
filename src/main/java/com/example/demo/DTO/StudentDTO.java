@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class StudentDTO {
     private Long studentId;
-    private String studentName;
-    private int studentAge;
+    private String name;
+    private int age;
 }

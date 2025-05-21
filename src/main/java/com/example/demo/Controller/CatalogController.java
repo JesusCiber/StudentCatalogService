@@ -19,7 +19,7 @@ public class CatalogController {
     private CatalogService catalogService;
 
     @GetMapping("/{courseCode}")
-    public ResponseEntity<Catalog> getCatalogByCourseCode(@PathVariable Long courseCode) {
+    public ResponseEntity<Catalog> getCatalog(@PathVariable Long courseCode) {
         Catalog catalog = catalogService.getCatalogByCourseCode(courseCode);
         if (catalog == null) {
             return ResponseEntity.notFound().build();

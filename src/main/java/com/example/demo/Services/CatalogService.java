@@ -1,15 +1,18 @@
 package com.example.demo.Services;
 
+import com.example.demo.DTO.CourseDTO;
 import com.example.demo.DTO.CourseGradeDTO;
+
+import com.example.demo.DTO.GradeDTO;
 import com.example.demo.DTO.StudentDTO;
 import com.example.demo.Models.Catalog;
 import com.example.demo.Models.StudentGrade;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 
 @Service
@@ -17,32 +20,44 @@ public class CatalogService {
 
     private final RestTemplate restTemplate;
 
-    @Autowired
     public CatalogService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public Catalog getCatalogByCourseCode(Long courseCode) {
-        String gradesUrl = "http://grades-data-service/api/course/" + courseCode + "/grade";
-        CourseGradeDTO courseGradeDTO = restTemplate.getForObject(gradesUrl, CourseGradeDTO.class);
+        String gradesUrl = "http://grades-data-service/api/course/" + courseCode;
+        CourseDTO courseDTO = restTemplate.getForObject(gradesUrl, CourseDTO.class);
 
-        if (courseGradeDTO == null) {
+        if (courseDTO == null) {
             return null;
         }
 
-        List<StudentGrade> studentGrades = courseGradeDTO.getGrades().stream()
-                .map(grade -> {
-                    String studentUrl = "http://student-info-service/api/students/" + grade.getStudentId();
-                    StudentDTO student = restTemplate.getForObject(studentUrl, StudentDTO.class);
+        CourseGradeDTO courseGradeDTO = restTemplate.getForObject(
+                "http://grades-data-service/api/course/" + courseCode + "/grade",
+                CourseGradeDTO.class
+        );
 
-                    if (student == null) {
-                        return null;
-                    }
 
-                    return new StudentGrade(student.getStudentName(), student.getStudentAge(),grade.getGrade());
-                })
-                .collect(Collectors.toList());
 
-        return new Catalog(courseGradeDTO.getCourseName(), studentGrades);
+        List<StudentGrade> studentGrades = new ArrayList<>();
+
+        if (courseGradeDTO != null && courseGradeDTO.getGrades() != null) {
+            for (GradeDTO grade : courseGradeDTO.getGrades()) {
+                StudentDTO student = restTemplate.getForObject(
+                        "http://student-info-service/api/students/" + grade.getStudentId(),
+                        StudentDTO.class
+                );
+
+                if (student != null) {
+                    studentGrades.add(new StudentGrade(
+                            student.getName(),
+                            student.getAge(),
+                            grade.getGrade()
+                    ));
+                }
+            }
+        }
+
+        return new Catalog(courseDTO.getCourseName(), studentGrades);
     }
 }
